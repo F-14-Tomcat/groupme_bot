@@ -55,11 +55,11 @@ while(True):
             formatted_date = current_date.strftime("%d %b %Y %H:%M:%S")
 
             # Format full entry
-            full_entry = "Date: " + formatted_date + ", Entry: " + messages[0][1][5:] + "\n"
+            full_entry = formatted_date + ", " + messages[0][1][5:] + "\n"
             print("---- [NEW ENTRY] ----\n" + full_entry + "---------")
             
             # Append entry to local file
-            with open("log.txt", "a") as log_file:
+            with open("log.csv", "a") as log_file:
                 log_file.write(full_entry)
             
             # Send message in chat to confirm that the message was seen
