@@ -1,30 +1,57 @@
 import requests
+import json
+import time
+
+from datetime import datetime
 from config import BOT_ID, ACCESS_TOKEN
 
-url = "https://api.groupme.com/v3/bots/post"
-data = {
-    "bot_id": BOT_ID,
-    "text": "Another test from Wes",
-    "attachments" : [
-        {
-        "type"  : "location",
-        "lng"   : "40.000",
-        "lat"   : "70.000",
-        "name"  : "GroupMe HQ"
-        }
-    ]
-}
-headers = {
-    "Content-Type": "application/json"
-}
+def send_msg(msg):
+    url = "https://api.groupme.com/v3/bots/post"
+    data = {
+        "bot_id": BOT_ID,
+        "text": msg,
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
 
-send_txt = requests.post(url, json=data, headers=headers)
-# read_txt = requests.get(url, json=data, headers=headers)
+    send_txt = requests.post(url, json=data, headers=headers)
 
-print(read_txt)
+def update_msgs():
+    msgs = requests.get("https://api.groupme.com/v3/groups/95739422/messages?token=" + ACCESS_TOKEN)
+    # read_txt = requests.get(url, json=data, headers=headers)
 
+    if msgs.status_code == 200:
+        data = msgs.json()
+        messages = data["response"]["messages"]
 
-# curl -X POST -d '{"bot_id": "4bc6f7816a4a4bbb8610be0e49", "text": "Hello world"}' -H 'Content-Type: application/json' https://api.groupme.com/v3/bots/post
+        message_texts = []
 
-# H-PACK
-# curl -X POST -d '{"bot_id": "d183f3929f9920248ec68b2117", "text": "Hot indeed"}' -H 'Content-Type: application/json' https://api.groupme.com/v3/bots/post
+        for message in messages:
+            text = message.get("text")
+            text_id = message.get("id")
+            message_texts.append([text_id, text])
+        
+        return(message_texts)
+
+last_id = 0
+while(True):
+    messages = update_msgs()
+
+    if last_id != messages[0][0]:
+        last_id = messages[0][0]
+        if "log:" in messages[0][1].lower():
+            # Get date of entry
+            current_date = datetime.now()
+            formatted_date = current_date.strftime("%d %b %Y %H:%M:%S")
+
+            full_entry = "Date: " + formatted_date + ", Entry: " + messages[0][1][5:] + "\n"
+
+            
+            with open("log.txt", "a") as log_file:
+                log_file.write(full_entry)
+
+            send_msg("Thank you, entry recorded")
+    
+
+    time.sleep(1)
