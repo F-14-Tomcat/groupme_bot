@@ -1,9 +1,14 @@
 import requests
 import json
 import time
+import os
+import openai
 
 from datetime import datetime
-from config import BOT_ID, ACCESS_TOKEN
+from config import BOT_ID, ACCESS_TOKEN, OPENAI_KEY
+
+openai.api_key = OPENAI_KEY
+openai.organization = "org-LdSlWbJ9mw5Y4EqwxL2bRZaj"
 
 # Function to send a message in the group using a pre-made bot
 def send_msg(msg):
@@ -45,11 +50,15 @@ def update_msgs():
 # into the "log.txt" file. Ignore all other messages
 last_id = 0
 while(True):
-    messages = update_msgs()
+    # API call to get messages
+    messages = []
+    try:
+        messages = update_msgs()
 
     if last_id != messages[0][0]:
         last_id = messages[0][0]
-        if "log:" in messages[0][1].lower():
+        parse_check = messages[0][1][0:5]
+        if "log:" in parse_check.lower():
             # Get date of entry
             current_date = datetime.now()
             formatted_date = current_date.strftime("%d %b %Y %H:%M:%S")
@@ -63,7 +72,8 @@ while(True):
                 log_file.write(full_entry)
             
             # Send message in chat to confirm that the message was seen
-            send_msg("Thank you, entry recorded")
-    
+            text_in = "make a dissapointed comment about the following: " + messages[0][1][5:]
+            chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": text_in}])
+            send_msg(chat_completion.choices[0].message.content)    
 
-    time.sleep(1)
+    time.sleep(3)
